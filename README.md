@@ -62,6 +62,24 @@ Aucun droit administrateur n'est nécessaire. Pour désinstaller : clic droit su
 
 Les mises à jour poussées sur GitHub sont récupérées automatiquement au lancement suivant (si une connexion est disponible).
 
+## Version bureau Windows (Rust)
+
+Une version native, construite avec [Tauri](https://tauri.app) (Rust), est publiée dans les **Releases** du dépôt :
+
+- `Logigramme_x.y.z_x64-setup.exe` : installeur, sans droits administrateur (installation dans le profil utilisateur)
+- `Logigramme-portable.exe` : exécutable seul, rien à installer
+
+Même interface que la version web, mais **aucune donnée dans le stockage du navigateur** :
+
+- la session en cours est écrite par Rust dans `%LOCALAPPDATA%\io.github.onlyv.logigramme\session.json` (dossier local, non synchronisé avec un profil itinérant) ;
+- **Ouvrir** / **Enregistrer** / exports PNG et SVG passent par les boîtes de dialogue natives de Windows ;
+- `Ctrl+S` réenregistre dans le fichier ouvert, `Ctrl+Maj+S` enregistre sous un autre nom, `Ctrl+O` ouvre ;
+- aucune connexion réseau.
+
+L'exécutable n'est pas signé : au premier lancement, Windows SmartScreen peut afficher « Windows a protégé votre ordinateur » (**Informations complémentaires > Exécuter quand même**). Il nécessite WebView2, présent d'origine sur Windows 10 et 11.
+
+Pour publier une nouvelle version : pousser un tag `vX.Y.Z` (le workflow `.github/workflows/windows.yml` compile et crée la release). Compilation locale : `mkdir dist && cp index.html dist/ && cd src-tauri && cargo tauri build`.
+
 ## Ouverture et sauvegarde
 
 - Premier lancement : page vierge.

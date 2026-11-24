@@ -1,0 +1,46 @@
+name: Application Windows
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Préparer l'interface
+        shell: bash
+        run: mkdir -p dist && cp index.html dist/
+
+      - name: Compiler
+        run: npx --yes @tauri-apps/cli@2 build
+
+      - name: Rassembler les fichiers
+        shell: bash
+        run: |
+          mkdir out
+          cp src-tauri/target/release/logigramme.exe out/Logigramme-portable.exe
+          cp src-tauri/target/release/bundle/nsis/*.exe out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Logigramme-Windows
+          path: out/*
+
+      - name: Publier la release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*
