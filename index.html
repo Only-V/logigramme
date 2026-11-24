@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logigramme</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d1016'/%3E%3Crect x='7' y='4' width='18' height='8' rx='2' fill='none' stroke='%238b8cf6' stroke-width='2'/%3E%3Cpath d='M16 12v5' stroke='%236b7280' stroke-width='2'/%3E%3Cpath d='M16 17l7 5.5-7 5.5-7-5.5z' fill='none' stroke='%238b8cf6' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#12161e">
+<style>
+:root{
+  --bg:#0d1016; --panel:#12161e; --panel2:#1a1f29; --line:#252b37; --text:#e6e8ee; --muted:#9aa3b2; --dim:#6b7280; --accent:#8b8cf6;
+  --mono:ui-monospace,"JetBrains Mono","Cascadia Code","SF Mono",Menlo,Consolas,monospace;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;overflow:hidden}
+#app{display:grid;grid-template-rows:50px 1fr;grid-template-columns:1fr 300px;height:100vh}
+header{grid-column:1/3;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--line);background:var(--panel);overflow-x:auto;white-space:nowrap}
+.brand{display:flex;align-items:center;gap:8px;margin-right:6px}
+.brand .logo{width:22px;height:22px;border:1.5px solid var(--accent);border-radius:5px;position:relative;flex:none}
+.brand .logo::after{content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;border:1.5px solid var(--accent);transform:translate(-50%,-50%) rotate(45deg)}
+#docTitle{background:transparent;border:1px solid transparent;color:var(--text);font:600 14px var(--sans);padding:5px 7px;border-radius:6px;width:210px}
+#docTitle:hover,#docTitle:focus{border-color:var(--line);outline:none;background:var(--panel2)}
+.group{display:flex;gap:4px;padding-left:10px;border-left:1px solid var(--line)}
+.spacer{flex:1}
+button{font:500 12.5px var(--sans);color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+button:hover{border-color:#3a4252;background:#202633}
+button.on{border-color:var(--accent);color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#0d1016;font-weight:700}
+button.primary:hover{filter:brightness(1.08)}
+button.danger{color:#f08b80}
+button .k{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-left:5px}
+#stage{position:relative;overflow:hidden;background-color:var(--bg);background-image:radial-gradient(circle,#232a38 1px,transparent 1.3px)}
+#canvas{width:100%;height:100%;display:block;touch-action:none}
+#canvas text{user-select:none;-webkit-user-select:none}
+#canvas .node{cursor:move}
+#canvas .edge{cursor:pointer}
+#canvas .port{cursor:crosshair}
+#zoomInfo{position:absolute;left:12px;bottom:12px;font:600 11px var(--mono);color:var(--dim);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 8px;cursor:pointer}
+#hint{position:absolute;right:12px;bottom:12px;font:11px var(--mono);color:var(--dim);pointer-events:none}
+aside{border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:16px}
+aside h3{margin:0 0 14px;font:700 10.5px var(--mono);letter-spacing:1.4px;text-transform:uppercase;color:var(--accent)}
+aside h4{margin:18px 0 8px;font:700 10px var(--mono);letter-spacing:1.2px;text-transform:uppercase;color:var(--dim)}
+.f{display:block;margin-bottom:12px}
+.f>span{display:block;color:var(--muted);font-size:11.5px;margin-bottom:5px}
+input[type=text],input[type=number],textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:7px 9px;font:13px var(--sans)}
+textarea{resize:vertical;min-height:38px;line-height:1.35}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.chk{display:flex;align-items:center;gap:8px;margin-bottom:10px;color:var(--muted);cursor:pointer}
+.chk input{accent-color:var(--accent);width:15px;height:15px}
+.sw{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.swatch{width:24px;height:24px;padding:0;border-radius:6px;background:var(--panel2);border:2px solid var(--c)}
+.swatch.on{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--c)}
+.sw input[type=color]{width:26px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.muted{color:var(--muted);line-height:1.5}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;color:var(--muted);font-size:12px}
+.keys kbd{font:600 10.5px var(--mono);color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:2px 5px;white-space:nowrap;justify-self:start}
+@media (max-width:820px){#app{grid-template-columns:1fr;grid-template-rows:50px 1fr 40%}aside{border-left:0;border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand"><span class="logo"></span><input id="docTitle" spellcheck="false" aria-label="Titre du logigramme"></div>
+    <div class="group">
+      <button data-act="add-box" title="Ajouter un bloc (B)">▭ Bloc</button>
+      <button data-act="add-diamond" title="Ajouter une décision (D)">◇ Décision</button>
+      <button data-act="add-pill" title="Ajouter une pastille (P)">⬭ Pastille</button>
+      <button data-act="add-text" title="Ajouter un texte (T)">T Texte</button>
+    </div>
+    <div class="group">
+      <button data-act="undo" title="Annuler (Ctrl+Z)">↶</button>
+      <button data-act="redo" title="Rétablir (Ctrl+Y)">↷</button>
+      <button data-act="fit" title="Recadrer (F)">⤢ Recadrer</button>
+      <button data-act="snap" id="snapBtn" title="Magnétisme de la grille (G)">▦ Grille</button>
+    </div>
+    <div class="spacer"></div>
+    <button id="installBtn" title="Installer comme application de bureau" hidden>⬇ Installer l'app</button>
+    <div class="group">
+      <button data-act="new">Nouveau</button>
+      <button data-act="example">Exemple</button>
+      <button data-act="open" title="Ouvrir un fichier .json">Ouvrir</button>
+      <button data-act="save-json" title="Enregistrer en .json (Ctrl+S)">Enregistrer</button>
+      <button data-act="export-svg">SVG</button>
+      <button data-act="export-png" class="primary">Export PNG</button>
+    </div>
+    <input type="file" id="fileIn" accept=".json,application/json" hidden>
+  </header>
+  <main id="stage">
+    <svg id="canvas" xmlns="http://www.w3.org/2000/svg"><g id="vp"><g id="edgesL"></g><g id="nodesL"></g><g id="overL"></g></g></svg>
+    <div id="zoomInfo" title="Revenir à 100 %">100 %</div>
+    <div id="hint">glisser : déplacer · molette : zoom · Maj+glisser : sélection</div>
+  </main>
+  <aside id="panel"></aside>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- Constantes de style ---------- */
+const SANS = "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const MONO = "ui-monospace, 'JetBrains Mono', 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace";
+const C = { bg:'#0d1016', fill:'#1a1e27', title:'#eceef3', sub:'#9aa3b2', edge:'#6b7280', accent:'#8b8cf6' };
+const PALETTE = [
+  ['Indigo','#8b8cf6'],['Corail','#e2786b'],['Turquoise','#3fc1c9'],['Vert','#6cc47f'],
+  ['Ambre','#e3b35c'],['Violet','#b88cf3'],['Gris','#9aa3b2'],['Rose','#f07a9a']
+];
+const EDGE_PALETTE = [['Gris foncé', C.edge], ...PALETTE];
+const F = {
+  tag:`600 10px ${MONO}`, title:`700 14px ${SANS}`, sub:`400 12px ${SANS}`,
+  dia:`700 13px ${SANS}`, pill:`700 11px ${MONO}`, text:`700 12px ${MONO}`
+};
+const DIR = { top:[0,-1], right:[1,0], bottom:[0,1], left:[-1,0] };
+const OPP = { top:'bottom', bottom:'top', left:'right', right:'left' };
+const PORTS = ['top','right','bottom','left'];
+const PORT_FR = { top:'Haut', right:'Droite', bottom:'Bas', left:'Gauche' };
+const TYPE_FR = { box:'Bloc', diamond:'Décision', pill:'Pastille', text:'Texte' };
+const GRID = 10, STUB = 24, KEY = 'logigramme.v1';
+
+/* ---------- État ---------- */
+let doc = emptyDoc();
+let view = { x:0, y:0, k:1 };
+let sel = { nodes:new Set(), edge:null };
+let hover = null, snap = true, drag = null, guides = [];
+let undoS = [], redoS = [], clip = null, pendingSnap = null;
+
+const $ = s => document.querySelector(s);
+const svg = $('#canvas'), vp = $('#vp'), edgesL = $('#edgesL'), nodesL = $('#nodesL'), overL = $('#overL');
+const stage = $('#stage'), panel = $('#panel'), titleIn = $('#docTitle');
+
+function emptyDoc(){ return { title:'Mon logigramme', nodes:[], edges:[] }; }
+const uid = p => p + Math.random().toString(36).slice(2, 9);
+const byId = id => doc.nodes.find(n => n.id === id);
+const edgeById = id => doc.edges.find(e => e.id === id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const r1 = v => Math.round(v * 10) / 10;
+const snapV = v => snap ? Math.round(v / GRID) * GRID : v;
+const lines = s => String(s ?? '').split('\n');
+
+/* ---------- Mesure du texte ---------- */
+const mctx = document.createElement('canvas').getContext('2d');
+function tw(text, font, ls = 0){ mctx.font = font; return mctx.measureText(text).width + ls * text.length; }
+
+function geom(n){
+  if (n.type === 'box'){
+    const T = lines(n.title), S = n.sub ? lines(n.sub) : [];
+    let mw = n.tag ? tw(n.tag.toUpperCase(), F.tag, 1.2) : 0;
+    T.forEach(l => mw = Math.max(mw, tw(l, F.title)));
+    S.forEach(l => mw = Math.max(mw, tw(l, F.sub)));
+    const w = n.w > 0 ? n.w : Math.max(160, Math.ceil(mw + 44));
+    const h = 12 + (n.tag ? 16 : 0) + T.length * 19 + (S.length ? 2 + S.length * 16 : 0) + 11;
+    return { w, h };
+  }
+  if (n.type === 'diamond'){
+    const T = lines(n.title); let mw = 0;
+    T.forEach(l => mw = Math.max(mw, tw(l, F.dia)));
+    const th = T.length * 17;
+    const w = n.w > 0 ? n.w : Math.max(120, Math.ceil(2 * mw + 28));
+    const h = Math.max(n.w > 0 ? Math.round(w * 0.72) : 86, 2 * th + 30);
+    return { w, h };
+  }
+  if (n.type === 'pill'){
+    return { w: n.w > 0 ? n.w : Math.ceil(tw(n.title || '', F.pill) + 26), h: 22 };
+  }
+  const T = lines(n.title); let mw = 0;
+  T.forEach(l => mw = Math.max(mw, tw(l, F.text)));
+  return { w: Math.ceil(mw) + 6, h: T.length * 16 + 4 };
+}
+
+function portPt(n, g, p){
+  switch (p){
+    case 'top': return [n.x, n.y - g.h / 2];
+    case 'bottom': return [n.x, n.y + g.h / 2];
+    case 'left': return [n.x - g.w / 2, n.y];
+    default: return [n.x + g.w / 2, n.y];
+  }
+}
+function nearestPort(n, w){
+  const g = geom(n); let best = 'top', bd = Infinity;
+  for (const p of PORTS){ const q = portPt(n, g, p); const d = Math.hypot(q[0] - w[0], q[1] - w[1]); if (d < bd){ bd = d; best = p; } }
+  return best;
+}
+
+/* ---------- Routage orthogonal ---------- */
+// Tout est ramené à un repère où la sortie est verticale (transposition sinon).
+function routeVV(P){
+  const { a, b, da, db } = P;
+  if (da[1] === -db[1] && (b[1] - a[1]) * da[1] > 0){
+    const Y = P.oy ?? (a[1] + b[1]) / 2;
+    return { pts:[a, [a[0], Y], [b[0], Y], b], handles:[{ i:1, key:'oy' }] };
+  }
+  if (da[1] === db[1]){
+    const Y = P.oy ?? (da[1] > 0 ? Math.max(a[1], b[1]) + STUB : Math.min(a[1], b[1]) - STUB);
+    return { pts:[a, [a[0], Y], [b[0], Y], b], handles:[{ i:1, key:'oy' }] };
+  }
+  const y1 = a[1] + da[1] * STUB, y2 = b[1] + db[1] * STUB;
+  const X = P.ox ?? (Math.min(P.A.x - P.A.w / 2, P.B.x - P.B.w / 2) - 30);
+  return { pts:[a, [a[0], y1], [X, y1], [X, y2], [b[0], y2], b], handles:[{ i:2, key:'ox' }] };
+}
+function routeVH(P){
+  const { a, b, da, db } = P;
+  const c = [a[0], b[1]];
+  const ok = (c[1] - a[1]) * da[1] > 0 && (b[0] - c[0]) * (-db[0]) > 0;
+  if (ok && P.oy == null && P.ox == null) return { pts:[a, c, b], handles:[] };
+  const y1 = P.oy ?? a[1] + da[1] * STUB, x2 = P.ox ?? b[0] + db[0] * STUB;
+  return { pts:[a, [a[0], y1], [x2, y1], [x2, b[1]], b], handles:[{ i:1, key:'oy' }, { i:2, key:'ox' }] };
+}
+function route(e){
+  const A = byId(e.from), B = byId(e.to);
+  if (!A || !B) return null;
+  const ga = geom(A), gb = geom(B);
+  const a = portPt(A, ga, e.fromPort), b = portPt(B, gb, e.toPort);
+  const da = DIR[e.fromPort], db = DIR[e.toPort];
+  const bA = { x:A.x, y:A.y, w:ga.w, h:ga.h }, bB = { x:B.x, y:B.y, w:gb.w, h:gb.h };
+  const tr = da[0] !== 0;
+  const T = p => [p[1], p[0]], TB = q => ({ x:q.y, y:q.x, w:q.h, h:q.w });
+  const P = tr ? { a:T(a), b:T(b), da:T(da), db:T(db), A:TB(bA), B:TB(bB), oy:e.ox, ox:e.oy }
+               : { a, b, da, db, A:bA, B:bB, oy:e.oy, ox:e.ox };
+  const res = P.db[0] === 0 ? routeVV(P) : routeVH(P);
+  if (tr){
+    res.pts = res.pts.map(T);
+    res.handles = res.handles.map(h => ({ ...h, key: h.key === 'oy' ? 'ox' : 'oy' }));
+  }
+  return res;
+}
+function simplify(p){
+  const o = [];
+  for (const q of p){ const l = o[o.length - 1]; if (l && Math.abs(l[0] - q[0]) < .01 && Math.abs(l[1] - q[1]) < .01) continue; o.push(q); }
+  for (let i = o.length - 2; i > 0; i--){
+    const a = o[i - 1], b = o[i], c = o[i + 1];
+    if ((Math.abs(a[0] - b[0]) < .01 && Math.abs(b[0] - c[0]) < .01) || (Math.abs(a[1] - b[1]) < .01 && Math.abs(b[1] - c[1]) < .01)) o.splice(i, 1);
+  }
+  return o;
+}
+function pointAt(pts, f){
+  let total = 0; const seg = [];
+  for (let i = 0; i < pts.length - 1; i++){ const l = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]); seg.push(l); total += l; }
+  let t = total * f;
+  for (let i = 0; i < seg.length; i++){
+    if (t <= seg[i] || i === seg.length - 1){ const k = seg[i] ? Math.min(1, t / seg[i]) : 0; return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * k, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * k]; }
+    t -= seg[i];
+  }
+  return pts[0];
+}
+
+/* ---------- Rendu SVG ---------- */
+function txt(x, y, s, font, size, weight, fill, extra = ''){
+  return `<text x="${r1(x)}" y="${r1(y)}" text-anchor="middle" font-family="${font}" font-size="${size}" font-weight="${weight}" fill="${fill}"${extra}>${esc(s)}</text>`;
+}
+function nodeSVG(n, ui = true){
+  const g = geom(n), x0 = n.x - g.w / 2, y0 = n.y - g.h / 2;
+  const col = n.color || PALETTE[0][1];
+  const dash = n.dashed ? ' stroke-dasharray="6 4"' : '';
+  let s = ui ? `<g class="node" data-id="${n.id}">` : '<g>';
+  if (n.type === 'box'){
+    s += `<rect x="${r1(x0)}" y="${r1(y0)}" width="${g.w}" height="${g.h}" rx="9" fill="${C.fill}" stroke="${col}" stroke-width="1.5"${dash}/>`;
+    let y = y0 + 12;
+    if (n.tag){ s += txt(n.x, y + 10, n.tag.toUpperCase(), MONO, 10, 600, col, ' letter-spacing="1.2"'); y += 16; }
+    lines(n.title).forEach(l => { s += txt(n.x, y + 14, l, SANS, 14, 700, C.title); y += 19; });
+    if (n.sub){ y += 2; lines(n.sub).forEach(l => { s += txt(n.x, y + 12, l, SANS, 12, 400, C.sub); y += 16; }); }
+  } else if (n.type === 'diamond'){
+    const pts = `${r1(n.x)},${r1(y0)} ${r1(x0 + g.w)},${r1(n.y)} ${r1(n.x)},${r1(y0 + g.h)} ${r1(x0)},${r1(n.y)}`;
+    s += `<polygon points="${pts}" fill="${C.fill}" stroke="${col}" stroke-width="1.5" stroke-linejoin="round"${dash}/>`;
+    const T = lines(n.title); let y = n.y - T.length * 17 / 2 + 12.5;
+    T.forEach(l => { s += txt(n.x, y, l, SANS, 13, 700, C.title); y += 17; });
+  } else if (n.type === 'pill'){
+    s += `<rect x="${r1(x0)}" y="${r1(y0)}" width="${g.w}" height="${g.h}" rx="${g.h / 2}" fill="${C.fill}" stroke="${col}" stroke-width="1.4"${dash}/>`;
+    s += txt(n.x, n.y + 4, n.title || '', MONO, 11, 700, col);
+  } else {
+    if (ui) s += `<rect x="${r1(x0)}" y="${r1(y0)}" width="${g.w}" height="${g.h}" fill="transparent"/>`;
+    const T = lines(n.title); let y = y0 + 14;
+    T.forEach(l => { s += txt(n.x, y, l, MONO, 12, 700, col); y += 16; });
+  }
+  return s + '</g>';
+}
+function edgeSVG(e, ui = true){
+  const r = route(e); if (!r) return '';
+  const pts = simplify(r.pts); if (pts.length < 2) return '';
+  const col = e.color || C.edge, arrow = e.arrow !== false, isSel = ui && sel.edge === e.id;
+  const n = pts.length, end = pts[n - 1], pre = pts[n - 2];
+  const L = Math.hypot(end[0] - pre[0], end[1] - pre[1]) || 1, ux = (end[0] - pre[0]) / L, uy = (end[1] - pre[1]) / L;
+  const AL = 8, AW = 4.5, dp = pts.slice();
+  if (arrow && L > AL) dp[n - 1] = [end[0] - ux * AL, end[1] - uy * AL];
+  const d = 'M' + dp.map(p => r1(p[0]) + ' ' + r1(p[1])).join(' L');
+  let s = ui ? `<g class="edge" data-id="${e.id}">` : '<g>';
+  if (ui) s += `<path d="${d}" fill="none" stroke="transparent" stroke-width="14"/>`;
+  if (isSel) s += `<path d="${d}" fill="none" stroke="${C.accent}" stroke-opacity=".35" stroke-width="6" stroke-linejoin="round"/>`;
+  s += `<path d="${d}" fill="none" stroke="${col}" stroke-width="1.5"${e.dashed ? ' stroke-dasharray="5 4"' : ''}/>`;
+  if (arrow){
+    const bx = end[0] - ux * AL, by = end[1] - uy * AL;
+    s += `<polygon points="${r1(end[0])},${r1(end[1])} ${r1(bx - uy * AW)},${r1(by + ux * AW)} ${r1(bx + uy * AW)},${r1(by - ux * AW)}" fill="${col}"/>`;
+  }
+  if (e.label){
+    const [lx, ly] = pointAt(pts, e.labelPos ?? 0.5);
+    const lc = e.labelColor || (e.color && e.color !== C.edge ? e.color : C.sub);
+    const w = Math.ceil(tw(e.label, F.pill) + 22), h = 20;
+    s += `<rect x="${r1(lx - w / 2)}" y="${r1(ly - h / 2)}" width="${w}" height="${h}" rx="10" fill="${C.fill}" stroke="${lc}" stroke-width="1.3"/>`;
+    s += txt(lx, ly + 4, e.label, MONO, 11, 700, lc);
+  }
+  return s + '</g>';
+}
+function overlaySVG(){
+  let s = '';
+  for (const id of sel.nodes){
+    const n = byId(id); if (!n) continue;
+    const g = geom(n), p = 5;
+    s += `<rect x="${r1(n.x - g.w / 2 - p)}" y="${r1(n.y - g.h / 2 - p)}" width="${g.w + 2 * p}" height="${g.h + 2 * p}" rx="12" fill="none" stroke="${C.accent}" stroke-width="1.2" stroke-dasharray="4 3" pointer-events="none"/>`;
+  }
+  for (const gd of guides){
+    if (gd.x != null) s += `<line x1="${gd.x}" y1="-100000" x2="${gd.x}" y2="100000" stroke="${C.accent}" stroke-opacity=".5" stroke-width="${1 / view.k}" pointer-events="none"/>`;
+    if (gd.y != null) s += `<line x1="-100000" y1="${gd.y}" x2="100000" y2="${gd.y}" stroke="${C.accent}" stroke-opacity=".5" stroke-width="${1 / view.k}" pointer-events="none"/>`;
+  }
+  const pid = hover || (sel.nodes.size === 1 ? [...sel.nodes][0] : null);
+  if (pid && byId(pid) && (!drag || drag.type === 'connect')){
+    const n = byId(pid), g = geom(n);
+    for (const p of PORTS){
+      const [x, y] = portPt(n, g, p);
+      s += `<g class="port" data-id="${n.id}" data-port="${p}"><circle cx="${r1(x)}" cy="${r1(y)}" r="10" fill="transparent"/><circle cx="${r1(x)}" cy="${r1(y)}" r="4.5" fill="${C.bg}" stroke="${C.accent}" stroke-width="1.6"/></g>`;
+    }
+  }
+  if (sel.edge){
+    const e = edgeById(sel.edge), r = e && route(e);
+    if (r) r.handles.forEach(h => {
+      const p = r.pts[h.i], q = r.pts[h.i + 1];
+      if (Math.hypot(q[0] - p[0], q[1] - p[1]) < 10) return;
+      const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+      s += `<rect class="handle" data-key="${h.key}" x="${r1(mx - 5)}" y="${r1(my - 5)}" width="10" height="10" rx="2" fill="${C.accent}" stroke="${C.bg}" stroke-width="1.5" style="cursor:${h.key === 'ox' ? 'ew-resize' : 'ns-resize'}"/>`;
+    });
+  }
+  if (drag && drag.type === 'connect'){
+    s += `<line x1="${drag.start[0]}" y1="${drag.start[1]}" x2="${drag.cur[0]}" y2="${drag.cur[1]}" stroke="${C.accent}" stroke-width="1.5" stroke-dasharray="5 4" pointer-events="none"/>`;
+  }
+  if (drag && drag.type === 'marquee'){
+    const [x1, y1] = drag.start, [x2, y2] = drag.cur;
+    s += `<rect x="${Math.min(x1, x2)}" y="${Math.min(y1, y2)}" width="${Math.abs(x2 - x1)}" height="${Math.abs(y2 - y1)}" fill="${C.accent}" fill-opacity=".08" stroke="${C.accent}" stroke-width="${1 / view.k}" pointer-events="none"/>`;
+  }
+  return s;
+}
+
+function render(){
+  vp.setAttribute('transform', `translate(${view.x},${view.y}) scale(${view.k})`);
+  const gs = GRID * 2 * view.k;
+  stage.style.backgroundSize = `${gs}px ${gs}px`;
+  stage.style.backgroundPosition = `${view.x}px ${view.y}px`;
+  edgesL.innerHTML = doc.edges.map(e => edgeSVG(e)).join('');
+  nodesL.innerHTML = doc.nodes.map(n => nodeSVG(n)).join('');
+  overL.innerHTML = overlaySVG();
+  $('#zoomInfo').textContent = Math.round(view.k * 100) + ' %';
+  $('#snapBtn').classList.toggle('on', snap);
+  if (document.activeElement !== titleIn) titleIn.value = doc.title || '';
+  save();
+}
+function renderAll(){ render(); renderPanel(); }
+
+/* ---------- Historique & sauvegarde ---------- */
+const snapshot = () => JSON.stringify(doc);
+function checkpoint(){ undoS.push(snapshot()); if (undoS.length > 200) undoS.shift(); redoS = []; }
+function cleanSel(){ for (const id of [...sel.nodes]) if (!byId(id)) sel.nodes.delete(id); if (sel.edge && !edgeById(sel.edge)) sel.edge = null; }
+function undo(){ if (!undoS.length) return; redoS.push(snapshot()); doc = JSON.parse(undoS.pop()); cleanSel(); renderAll(); }
+function redo(){ if (!redoS.length) return; undoS.push(snapshot()); doc = JSON.parse(redoS.pop()); cleanSel(); renderAll(); }
+let saveT;
+function save(){ clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify({ doc, view, snap })); } catch (_) {} }, 300); }
+
+/* ---------- Actions sur le modèle ---------- */
+function makeNode(type){
+  const n = { id:uid('n'), type, x:0, y:0, color:PALETTE[0][1] };
+  if (type === 'box') Object.assign(n, { tag:'Étape', title:'Nouveau bloc', sub:'Description' });
+  if (type === 'diamond') n.title = 'Condition ?';
+  if (type === 'pill'){ n.title = 'Oui'; n.color = PALETTE[3][1]; }
+  if (type === 'text') n.title = '↻ annotation';
+  return n;
+}
+function viewCenter(){ return [(stage.clientWidth / 2 - view.x) / view.k, (stage.clientHeight / 2 - view.y) / view.k]; }
+function selectOnly(id){ sel.nodes = new Set([id]); sel.edge = null; }
+function addNode(type, at){
+  checkpoint();
+  const n = makeNode(type);
+  const src = !at && sel.nodes.size === 1 && type !== 'text' ? byId([...sel.nodes][0]) : null;
+  if (src){ const gs = geom(src), gn = geom(n); n.x = src.x; n.y = src.y + gs.h / 2 + 44 + gn.h / 2; }
+  else { const p = at || viewCenter(); n.x = p[0]; n.y = p[1]; }
+  n.x = snapV(n.x); n.y = snapV(n.y);
+  doc.nodes.push(n);
+  if (src) doc.edges.push({ id:uid('e'), from:src.id, fromPort:'bottom', to:n.id, toPort:'top' });
+  selectOnly(n.id); renderAll(); focusField('title');
+}
+function deleteSel(){
+  if (!sel.nodes.size && !sel.edge) return;
+  checkpoint();
+  if (sel.edge) doc.edges = doc.edges.filter(e => e.id !== sel.edge);
+  if (sel.nodes.size){
+    doc.nodes = doc.nodes.filter(n => !sel.nodes.has(n.id));
+    doc.edges = doc.edges.filter(e => !sel.nodes.has(e.from) && !sel.nodes.has(e.to));
+  }
+  sel.nodes.clear(); sel.edge = null; hover = null; renderAll();
+}
+function copySel(){
+  if (!sel.nodes.size) return;
+  clip = {
+    nodes: doc.nodes.filter(n => sel.nodes.has(n.id)).map(n => ({ ...n })),
+    edges: doc.edges.filter(e => sel.nodes.has(e.from) && sel.nodes.has(e.to)).map(e => ({ ...e }))
+  };
+}
+function paste(){
+  if (!clip) return;
+  checkpoint();
+  const map = {}; sel.nodes = new Set(); sel.edge = null;
+  clip.nodes.forEach(n => { const c = { ...n, id:uid('n'), x:n.x + 30, y:n.y + 30 }; map[n.id] = c.id; doc.nodes.push(c); sel.nodes.add(c.id); });
+  clip.edges.forEach(e => {
+    const c = { ...e, id:uid('e'), from:map[e.from], to:map[e.to] };
+    if (c.ox != null) c.ox += 30; if (c.oy != null) c.oy += 30;
+    doc.edges.push(c);
+  });
+  clip = { nodes: clip.nodes.map(n => ({ ...n, x:n.x + 30, y:n.y + 30 })), edges: clip.edges.map(e => ({ ...e, ox: e.ox != null ? e.ox + 30 : e.ox, oy: e.oy != null ? e.oy + 30 : e.oy })) };
+  renderAll();
+}
+function duplicate(){ const keep = clip; copySel(); paste(); clip = keep; }
+function align(axis){
+  const ns = [...sel.nodes].map(byId).filter(Boolean); if (ns.length < 2) return;
+  checkpoint(); const ref = ns[0][axis]; ns.forEach(n => n[axis] = ref); renderAll();
+}
+function distribute(axis){
+  const ns = [...sel.nodes].map(byId).filter(Boolean).sort((a, b) => a[axis] - b[axis]); if (ns.length < 3) return;
+  checkpoint();
+  const a = ns[0][axis], b = ns[ns.length - 1][axis], step = (b - a) / (ns.length - 1);
+  ns.forEach((n, i) => n[axis] = snapV(a + step * i)); renderAll();
+}
+function setField(f, v){
+  if (sel.edge){
+    const e = edgeById(sel.edge); if (!e) return;
+    e[f] = v;
+    if (f === 'fromPort' || f === 'toPort'){ delete e.ox; delete e.oy; }
+    return;
+  }
+  for (const id of sel.nodes){ const n = byId(id); if (n) n[f] = v; }
+}
+
+/* ---------- Export ---------- */
+function bounds(){
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  const add = (x, y) => { x1 = Math.min(x1, x); y1 = Math.min(y1, y); x2 = Math.max(x2, x); y2 = Math.max(y2, y); };
+  doc.nodes.forEach(n => { const g = geom(n); add(n.x - g.w / 2, n.y - g.h / 2); add(n.x + g.w / 2, n.y + g.h / 2); });
+  doc.edges.forEach(e => { const r = route(e); if (r) r.pts.forEach(p => add(p[0], p[1])); });
+  return { x1, y1, x2, y2 };
+}
+function buildSVG(){
+  const b = bounds(), P = 40;
+  const W = Math.ceil(b.x2 - b.x1 + 2 * P), H = Math.ceil(b.y2 - b.y1 + 2 * P), ox = Math.floor(b.x1 - P), oy = Math.floor(b.y1 - P);
+  const str = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${ox} ${oy} ${W} ${H}"><rect x="${ox}" y="${oy}" width="${W}" height="${H}" fill="${C.bg}"/>${doc.edges.map(e => edgeSVG(e, false)).join('')}${doc.nodes.map(n => nodeSVG(n, false)).join('')}</svg>`;
+  return { str, W, H };
+}
+function fileName(){ return (doc.title || 'logigramme').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'logigramme'; }
+function download(name, blob){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function exportSVG(){ if (!doc.nodes.length) return; download(fileName() + '.svg', new Blob([buildSVG().str], { type:'image/svg+xml' })); }
+function exportPNG(){
+  if (!doc.nodes.length) return;
+  const { str, W, H } = buildSVG(), scale = 2, img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas'); c.width = W * scale; c.height = H * scale;
+    const x = c.getContext('2d'); x.scale(scale, scale); x.drawImage(img, 0, 0, W, H);
+    c.toBlob(b => download(fileName() + '.png', b), 'image/png');
+  };
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(str);
+}
+function exportJSON(){ download(fileName() + '.json', new Blob([JSON.stringify(doc, null, 2)], { type:'application/json' })); }
+function loadDoc(d){
+  if (!d || !Array.isArray(d.nodes) || !Array.isArray(d.edges)) throw new Error('format');
+  checkpoint(); doc = { title: d.title || 'Logigramme', nodes: d.nodes, edges: d.edges };
+  sel.nodes.clear(); sel.edge = null; hover = null; renderAll(); fit();
+}
+
+/* ---------- Vue ---------- */
+function fit(){
+  const W = stage.clientWidth, H = stage.clientHeight;
+  if (!doc.nodes.length){ view = { x:W / 2, y:H / 2, k:1 }; render(); return; }
+  const b = bounds(), P = 50;
+  view.k = Math.max(.2, Math.min((W - 2 * P) / Math.max(1, b.x2 - b.x1), (H - 2 * P) / Math.max(1, b.y2 - b.y1), 1.25));
+  view.x = W / 2 - (b.x1 + b.x2) / 2 * view.k; view.y = H / 2 - (b.y1 + b.y2) / 2 * view.k; render();
+}
+function zoomAt(mx, my, k2){ k2 = Math.min(4, Math.max(.15, k2)); view.x = mx - (mx - view.x) * k2 / view.k; view.y = my - (my - view.y) * k2 / view.k; view.k = k2; render(); }
+function toWorld(ev){ const r = svg.getBoundingClientRect(); return [(ev.clientX - r.left - view.x) / view.k, (ev.clientY - r.top - view.y) / view.k]; }
+
+/* ---------- Souris / pointeur ---------- */
+let lastDown = { t:0, key:null, x:0, y:0 };
+svg.addEventListener('pointerdown', ev => {
+  if (ev.button !== 0 && ev.button !== 1) return;
+  const t = ev.target, w = toWorld(ev);
+  const handle = t.closest('.handle'), port = t.closest('.port'), nodeEl = t.closest('.node'), edgeEl = t.closest('.edge');
+  const key = port ? 'p' : nodeEl ? nodeEl.dataset.id : edgeEl ? 'e' + edgeEl.dataset.id : 'empty';
+  const now = performance.now();
+  const dbl = now - lastDown.t < 350 && lastDown.key === key && Math.hypot(ev.clientX - lastDown.x, ev.clientY - lastDown.y) < 6;
+  lastDown = { t: dbl ? 0 : now, key, x:ev.clientX, y:ev.clientY };
+  ev.preventDefault();
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+
+  if (ev.button === 1){ drag = { type:'pan', sx:ev.clientX, sy:ev.clientY, vx:view.x, vy:view.y, moved:true }; return; }
+  if (handle && sel.edge){ checkpoint(); drag = { type:'handle', key:handle.dataset.key, eid:sel.edge }; return; }
+  if (port){
+    const n = byId(port.dataset.id);
+    drag = { type:'connect', from:n.id, port:port.dataset.port, start:portPt(n, geom(n), port.dataset.port), cur:w };
+    render(); return;
+  }
+  if (nodeEl){
+    const id = nodeEl.dataset.id;
+    if (dbl){ selectOnly(id); renderAll(); focusField('title'); return; }
+    if (ev.shiftKey){ sel.nodes.has(id) ? sel.nodes.delete(id) : sel.nodes.add(id); sel.edge = null; }
+    else if (!sel.nodes.has(id)) selectOnly(id);
+    drag = { type:'move', start:w, orig:[...sel.nodes].map(i => { const n = byId(i); return [i, n.x, n.y]; }), primary:id, moved:false };
+    const pi = drag.orig.findIndex(o => o[0] === id); if (pi > 0) drag.orig.unshift(drag.orig.splice(pi, 1)[0]);
+    renderAll(); return;
+  }
+  if (edgeEl){
+    sel.nodes.clear(); sel.edge = edgeEl.dataset.id; renderAll();
+    if (dbl) focusField('label');
+    return;
+  }
+  if (dbl){ addNode('box', w); return; }
+  if (ev.shiftKey) drag = { type:'marquee', start:w, cur:w };
+  else { drag = { type:'pan', sx:ev.clientX, sy:ev.clientY, vx:view.x, vy:view.y, moved:false }; svg.style.cursor = 'grabbing'; }
+});
+
+window.addEventListener('pointermove', ev => {
+  if (!drag){
+    const t = ev.target;
+    const el = svg.contains(t) ? (t.closest('.port') || t.closest('.node')) : null;
+    const h = el ? el.dataset.id : null;
+    if (h !== hover){ hover = h; render(); }
+    return;
+  }
+  const w = toWorld(ev);
+  switch (drag.type){
+    case 'pan':
+      view.x = drag.vx + ev.clientX - drag.sx; view.y = drag.vy + ev.clientY - drag.sy;
+      if (Math.hypot(ev.clientX - drag.sx, ev.clientY - drag.sy) > 3) drag.moved = true;
+      render(); break;
+    case 'move': {
+      let dx = w[0] - drag.start[0], dy = w[1] - drag.start[1];
+      if (!drag.moved){ if (Math.hypot(dx, dy) * view.k < 3) return; drag.moved = true; checkpoint(); }
+      const [, px, py] = drag.orig[0];
+      let nx = snapV(px + dx), ny = snapV(py + dy);
+      guides = [];
+      const thr = 7 / view.k; let bx = null, by = null;
+      for (const o of doc.nodes){
+        if (sel.nodes.has(o.id)) continue;
+        if (Math.abs(o.x - (px + dx)) < thr && (bx === null || Math.abs(o.x - (px + dx)) < Math.abs(bx - (px + dx)))) bx = o.x;
+        if (Math.abs(o.y - (py + dy)) < thr && (by === null || Math.abs(o.y - (py + dy)) < Math.abs(by - (py + dy)))) by = o.y;
+      }
+      if (bx !== null){ nx = bx; guides.push({ x:bx }); }
+      if (by !== null){ ny = by; guides.push({ y:by }); }
+      dx = nx - px; dy = ny - py;
+      for (const [i, ox, oy] of drag.orig){ const n = byId(i); n.x = ox + dx; n.y = oy + dy; }
+      render(); break;
+    }
+    case 'connect': {
+      drag.cur = w;
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      const ne = el && (el.closest('.port') || el.closest('.node'));
+      hover = ne && ne.dataset.id !== drag.from ? ne.dataset.id : null;
+      render(); break;
+    }
+    case 'handle': {
+      const e = edgeById(drag.eid); if (!e) break;
+      e[drag.key] = snapV(drag.key === 'ox' ? w[0] : w[1]); render(); break;
+    }
+    case 'marquee': drag.cur = w; render(); break;
+  }
+});
+
+window.addEventListener('pointerup', ev => {
+  if (!drag) return;
+  const d = drag; drag = null; guides = []; svg.style.cursor = '';
+  if (d.type === 'pan'){
+    if (!d.moved && (sel.nodes.size || sel.edge)){ sel.nodes.clear(); sel.edge = null; renderAll(); }
+    return;
+  }
+  if (d.type === 'connect'){
+    const w = toWorld(ev);
+    const el = document.elementFromPoint(ev.clientX, ev.clientY);
+    const ne = el && (el.closest('.port') || el.closest('.node'));
+    if (ne && ne.dataset.id !== d.from && byId(ne.dataset.id)){
+      checkpoint();
+      const toId = ne.dataset.id, toPort = ne.dataset.port || nearestPort(byId(toId), w);
+      const e = { id:uid('e'), from:d.from, fromPort:d.port, to:toId, toPort };
+      doc.edges.push(e); sel.nodes.clear(); sel.edge = e.id; hover = null; renderAll(); return;
+    }
+    if (Math.hypot(w[0] - d.start[0], w[1] - d.start[1]) > 30){
+      // Lâché dans le vide : crée un bloc relié
+      checkpoint();
+      const n = makeNode('box'), tp = OPP[d.port], g = geom(n), dir = DIR[tp];
+      n.x = snapV(w[0] - dir[0] * g.w / 2); n.y = snapV(w[1] - dir[1] * g.h / 2);
+      doc.nodes.push(n);
+      doc.edges.push({ id:uid('e'), from:d.from, fromPort:d.port, to:n.id, toPort:tp });
+      selectOnly(n.id); hover = null; renderAll(); focusField('title'); return;
+    }
+    hover = null; render(); return;
+  }
+  if (d.type === 'marquee'){
+    const [x1, y1] = d.start, [x2, y2] = d.cur;
+    const a = Math.min(x1, x2), b = Math.max(x1, x2), c = Math.min(y1, y2), e = Math.max(y1, y2);
+    doc.nodes.forEach(n => { if (n.x >= a && n.x <= b && n.y >= c && n.y <= e) sel.nodes.add(n.id); });
+    sel.edge = null; renderAll(); return;
+  }
+  renderAll();
+});
+
+svg.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const r = svg.getBoundingClientRect();
+  if (ev.shiftKey && !ev.ctrlKey){ view.x -= ev.deltaY; render(); return; }
+  const f = Math.exp(-ev.deltaY * (ev.deltaMode ? 0.05 : 0.0015));
+  zoomAt(ev.clientX - r.left, ev.clientY - r.top, view.k * f);
+}, { passive:false });
+svg.addEventListener('contextmenu', ev => ev.preventDefault());
+$('#zoomInfo').addEventListener('click', () => zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1));
+window.addEventListener('resize', render);
+
+/* ---------- Clavier ---------- */
+window.addEventListener('keydown', ev => {
+  const ae = document.activeElement, tag = ae && ae.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'){ if (ev.key === 'Escape') ae.blur(); return; }
+  const mod = ev.ctrlKey || ev.metaKey, k = ev.key.toLowerCase();
+  if (mod){
+    if (k === 'z'){ ev.preventDefault(); ev.shiftKey ? redo() : undo(); }
+    else if (k === 'y'){ ev.preventDefault(); redo(); }
+    else if (k === 'd'){ ev.preventDefault(); duplicate(); }
+    else if (k === 'c') copySel();
+    else if (k === 'v') paste();
+    else if (k === 'a'){ ev.preventDefault(); sel.nodes = new Set(doc.nodes.map(n => n.id)); sel.edge = null; renderAll(); }
+    else if (k === 's'){ ev.preventDefault(); exportJSON(); }
+    return;
+  }
+  if (ev.key === 'Delete' || ev.key === 'Backspace'){ ev.preventDefault(); deleteSel(); return; }
+  if (ev.key === 'Escape'){ sel.nodes.clear(); sel.edge = null; renderAll(); return; }
+  if (ev.key.startsWith('Arrow') && sel.nodes.size){
+    ev.preventDefault(); checkpoint();
+    const s = ev.shiftKey ? GRID * 2 : (snap ? GRID : 1);
+    const [dx, dy] = { ArrowUp:[0, -s], ArrowDown:[0, s], ArrowLeft:[-s, 0], ArrowRight:[s, 0] }[ev.key];
+    sel.nodes.forEach(id => { const n = byId(id); n.x += dx; n.y += dy; }); renderAll(); return;
+  }
+  if (ev.key === 'Enter' && (sel.nodes.size === 1 || sel.edge)){ ev.preventDefault(); focusField(sel.edge ? 'label' : 'title'); return; }
+  const map = { b:'box', d:'diamond', p:'pill', t:'text' };
+  if (map[k]) addNode(map[k]);
+  else if (k === 'f') fit();
+  else if (k === 'g'){ snap = !snap; render(); }
+});
+
+/* ---------- Panneau latéral ---------- */
+function swatches(field, val, pal = PALETTE){
+  const v = (val || '').toLowerCase();
+  return `<div class="sw">${pal.map(([nm, c]) => `<button type="button" class="swatch${c.toLowerCase() === v ? ' on' : ''}" data-f="${field}" data-v="${c}" title="${nm}" style="--c:${c}"></button>`).join('')}<input type="color" data-f="${field}" value="${esc(val || '#8b8cf6')}" title="Couleur personnalisée"></div>`;
+}
+const field = (label, inner) => `<label class="f"><span>${label}</span>${inner}</label>`;
+const chk = (f, on, label) => `<label class="chk"><input type="checkbox" data-f="${f}"${on ? ' checked' : ''}>${label}</label>`;
+const portSel = (f, v) => `<select data-f="${f}">${PORTS.map(p => `<option value="${p}"${p === v ? ' selected' : ''}>${PORT_FR[p]}</option>`).join('')}</select>`;
+
+function nodePanel(n){
+  let h = `<h3>${TYPE_FR[n.type]}</h3>`;
+  h += field('Type', `<select data-f="type">${Object.keys(TYPE_FR).map(t => `<option value="${t}"${t === n.type ? ' selected' : ''}>${TYPE_FR[t]}</option>`).join('')}</select>`);
+  if (n.type === 'box'){
+    h += field('Étiquette (en capitales)', `<input type="text" data-f="tag" value="${esc(n.tag)}" placeholder="ex. SHAREPOINT">`);
+    h += field('Titre', `<textarea data-f="title" rows="1">${esc(n.title)}</textarea>`);
+    h += field('Sous-titre', `<textarea data-f="sub" rows="1">${esc(n.sub)}</textarea>`);
+  } else {
+    h += field('Texte', `<textarea data-f="title" rows="${n.type === 'diamond' ? 2 : 1}">${esc(n.title)}</textarea>`);
+  }
+  h += `<h4>Couleur</h4>` + swatches('color', n.color);
+  h += `<h4>Forme</h4>`;
+  if (n.type !== 'text'){
+    h += chk('dashed', n.dashed, 'Bordure pointillée');
+    h += field('Largeur (0 = auto)', `<input type="number" min="0" step="10" data-f="w" value="${n.w || 0}">`);
+  }
+  h += `<div class="row"><button data-act="duplicate">Dupliquer</button><button data-act="delete" class="danger">Supprimer</button></div>`;
+  h += `<p class="muted" style="margin-top:16px">Survolez le bloc puis glissez un point pour créer une liaison. Lâchez dans le vide pour créer un nouveau bloc relié.</p>`;
+  return h;
+}
+function edgePanel(e){
+  let h = `<h3>Liaison</h3>`;
+  h += field('Libellé', `<input type="text" data-f="label" value="${esc(e.label)}" placeholder="ex. Oui, Non, 3…">`);
+  h += `<h4>Couleur du libellé</h4>` + swatches('labelColor', e.labelColor);
+  h += `<h4>Trait</h4>` + swatches('color', e.color || C.edge, EDGE_PALETTE);
+  h += `<div style="height:10px"></div>` + chk('dashed', e.dashed, 'Trait pointillé') + chk('arrow', e.arrow !== false, 'Flèche à l\'arrivée');
+  h += field('Position du libellé', `<input type="range" min="0.05" max="0.95" step="0.01" data-f="labelPos" value="${e.labelPos ?? 0.5}">`);
+  h += `<div class="row2">${field('Départ', portSel('fromPort', e.fromPort))}${field('Arrivée', portSel('toPort', e.toPort))}</div>`;
+  h += `<div class="row"><button data-act="reverse">Inverser</button><button data-act="reset-route">Tracé auto</button><button data-act="delete" class="danger">Supprimer</button></div>`;
+  h += `<p class="muted" style="margin-top:16px">Glissez les poignées carrées sur le trait pour décaler un segment (pratique pour les boucles de retour).</p>`;
+  return h;
+}
+function multiPanel(){
+  const first = byId([...sel.nodes][0]);
+  let h = `<h3>${sel.nodes.size} éléments</h3>`;
+  h += `<h4>Couleur</h4>` + swatches('color', first && first.color);
+  h += `<h4>Alignement</h4><div class="row"><button data-act="align-x" title="Même axe vertical que le premier sélectionné">Centrer en colonne</button><button data-act="align-y" title="Même ligne que le premier sélectionné">Centrer en ligne</button></div>`;
+  h += `<div class="row"><button data-act="dist-y">Répartir verticalement</button><button data-act="dist-x">Répartir horizontalement</button></div>`;
+  h += `<h4>Actions</h4><div class="row"><button data-act="duplicate">Dupliquer</button><button data-act="delete" class="danger">Supprimer</button></div>`;
+  return h;
+}
+function docPanel(){
+  return `<h3>Logigramme</h3>
+  <p class="muted">${doc.nodes.length} blocs · ${doc.edges.length} liaisons. Sauvegarde automatique dans ce navigateur. Utilisez <b>Enregistrer</b> pour garder un fichier .json.</p>
+  <h4>Créer</h4>
+  <div class="keys">
+    <kbd>B</kbd><span>Bloc (sous le bloc sélectionné, relié)</span>
+    <kbd>D</kbd><span>Décision</span>
+    <kbd>P</kbd><span>Pastille</span>
+    <kbd>T</kbd><span>Texte libre</span>
+    <kbd>Double-clic</kbd><span>Bloc à cet endroit</span>
+  </div>
+  <h4>Éditer</h4>
+  <div class="keys">
+    <kbd>Entrée</kbd><span>Modifier le texte</span>
+    <kbd>Suppr</kbd><span>Supprimer</span>
+    <kbd>Ctrl+D</kbd><span>Dupliquer</span>
+    <kbd>Ctrl+C / V</kbd><span>Copier / coller</span>
+    <kbd>Ctrl+Z / Y</kbd><span>Annuler / rétablir</span>
+    <kbd>Flèches</kbd><span>Déplacer (Maj : x2)</span>
+    <kbd>Maj+clic</kbd><span>Sélection multiple</span>
+  </div>
+  <h4>Vue</h4>
+  <div class="keys">
+    <kbd>F</kbd><span>Recadrer</span>
+    <kbd>G</kbd><span>Magnétisme grille</span>
+    <kbd>Molette</kbd><span>Zoom</span>
+  </div>`;
+}
+function renderPanel(){
+  if (sel.edge && edgeById(sel.edge)) panel.innerHTML = edgePanel(edgeById(sel.edge));
+  else if (sel.nodes.size === 1) panel.innerHTML = nodePanel(byId([...sel.nodes][0]));
+  else if (sel.nodes.size > 1) panel.innerHTML = multiPanel();
+  else panel.innerHTML = docPanel();
+  panel.querySelectorAll('textarea').forEach(autoGrow);
+}
+function autoGrow(t){ t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }
+function focusField(f){
+  const el = panel.querySelector(`[data-f="${f}"]`);
+  if (el){ el.focus(); if (el.select) el.select(); }
+}
+function valOf(el){
+  if (el.type === 'checkbox') return el.checked;
+  if (el.type === 'number' || el.type === 'range') return parseFloat(el.value) || 0;
+  return el.value;
+}
+panel.addEventListener('focusin', ev => { if (ev.target.matches('input,textarea,select')) pendingSnap = snapshot(); });
+panel.addEventListener('input', ev => {
+  const el = ev.target, f = el.dataset.f; if (!f) return;
+  if (pendingSnap){ undoS.push(pendingSnap); redoS = []; pendingSnap = null; }
+  setField(f, valOf(el));
+  if (el.tagName === 'TEXTAREA') autoGrow(el);
+  render();
+  if (f === 'type' || el.type === 'color') renderPanel();
+});
+panel.addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-f]'); if (!b) return;
+  checkpoint(); setField(b.dataset.f, b.dataset.v); renderAll();
+});
+
+/* ---------- Boutons ---------- */
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-act]'); if (!b) return;
+  const a = b.dataset.act;
+  switch (a){
+    case 'add-box': addNode('box'); break;
+    case 'add-diamond': addNode('diamond'); break;
+    case 'add-pill': addNode('pill'); break;
+    case 'add-text': addNode('text'); break;
+    case 'undo': undo(); break;
+    case 'redo': redo(); break;
+    case 'fit': fit(); break;
+    case 'snap': snap = !snap; render(); break;
+    case 'new': if (confirm('Effacer le logigramme en cours ? (Ctrl+Z pour revenir en arrière)')){ checkpoint(); doc = emptyDoc(); sel.nodes.clear(); sel.edge = null; renderAll(); fit(); } break;
+    case 'example': loadDoc(exampleDoc()); break;
+    case 'open': $('#fileIn').click(); break;
+    case 'save-json': exportJSON(); break;
+    case 'export-svg': exportSVG(); break;
+    case 'export-png': exportPNG(); break;
+    case 'delete': deleteSel(); break;
+    case 'duplicate': duplicate(); break;
+    case 'align-x': align('x'); break;
+    case 'align-y': align('y'); break;
+    case 'dist-x': distribute('x'); break;
+    case 'dist-y': distribute('y'); break;
+    case 'reverse': {
+      const e = edgeById(sel.edge); if (!e) break; checkpoint();
+      [e.from, e.to] = [e.to, e.from]; [e.fromPort, e.toPort] = [e.toPort, e.fromPort]; renderAll(); break;
+    }
+    case 'reset-route': {
+      const e = edgeById(sel.edge); if (!e) break; checkpoint(); delete e.ox; delete e.oy; renderAll(); break;
+    }
+  }
+});
+$('#fileIn').addEventListener('change', ev => {
+  const f = ev.target.files[0]; if (!f) return;
+  f.text().then(t => { try { loadDoc(JSON.parse(t)); } catch (_) { alert('Fichier invalide : un .json exporté par cette app est attendu.'); } });
+  ev.target.value = '';
+});
+titleIn.addEventListener('input', () => { doc.title = titleIn.value; save(); });
+titleIn.addEventListener('keydown', ev => { if (ev.key === 'Enter') titleIn.blur(); });
+
+/* ---------- Exemple ---------- */
+function exampleDoc(){
+  const I = '#8b8cf6', R = '#e2786b', T = '#3fc1c9', G = '#6cc47f', A = '#e3b35c', V = '#b88cf3', S = '#9aa3b2';
+  const N = (id, type, x, y, o) => ({ id, type, x, y, ...o });
+  const E = (id, from, fromPort, to, toPort, o = {}) => ({ id, from, fromPort, to, toPort, ...o });
+  return {
+    title: 'Exemple de logigramme',
+    nodes: [
+      N('n1', 'box', 420, 40, { w:360, color:I, tag:'Déclencheur', title:'Chaque matin à 8h' }),
+      N('n2', 'box', 420, 140, { w:360, color:R, tag:'Boutique', title:'Récupérer les commandes', sub:'Articles, quantités et adresse de livraison' }),
+      N('n3', 'box', 420, 250, { w:360, color:T, tag:'Stock', title:'Une seule lecture de l\'inventaire', sub:'Filtre : statut = En attente' }),
+      N('n4', 'box', 870, 380, { w:220, color:S, tag:'Archive', title:'Commandes annulées', sub:'→ statut « Clos »' }),
+      N('d1', 'diamond', 420, 420, { w:120, color:I, title:'En stock ?' }),
+      N('t1', 'text', 200, 404, { color:I, title:'↻ commande suivante' }),
+      N('n5', 'box', 640, 500, { w:200, color:G, tag:'Stock', title:'Réserver l\'article', sub:'Fin du cycle' }),
+      N('n6', 'box', 420, 570, { w:220, color:A, title:'« En rupture depuis »', sub:'Date du dernier réassort' }),
+      N('d2', 'diamond', 420, 680, { w:120, color:I, title:'Délai\nestimé ?' }),
+      N('n7', 'box', 250, 790, { w:200, color:A, title:'Mettre en attente' }),
+      N('n8', 'box', 250, 880, { w:230, color:V, tag:'Flux enfant', title:'Prévenir le client', sub:'Mail ou SMS' }),
+      N('n9', 'box', 590, 800, { w:240, color:R, title:'Proposer un remboursement', sub:'Validation par le support' }),
+      N('p1', 'pill', 420, 960, { w:120, color:S, title:'tous traités' }),
+      N('n10', 'box', 420, 1040, { w:360, color:I, tag:'Rapport quotidien', title:'Synthèse des commandes', sub:'Réservées, en attente, remboursées' }),
+      N('n11', 'box', 870, 1040, { w:220, color:R, dashed:true, tag:'Si une étape échoue', title:'Alerte équipe support', sub:'Mail ou chat' })
+    ],
+    edges: [
+      E('e1', 'n1', 'bottom', 'n2', 'top'),
+      E('e2', 'n2', 'bottom', 'n3', 'top'),
+      E('e3', 'n3', 'bottom', 'd1', 'top'),
+      E('e4', 'n3', 'bottom', 'n4', 'top', { oy:315 }),
+      E('e5', 'd1', 'right', 'n5', 'top', { label:'Oui', labelColor:G }),
+      E('e6', 'd1', 'bottom', 'n6', 'top', { label:'Non', labelColor:R }),
+      E('e7', 'n6', 'bottom', 'd2', 'top'),
+      E('e8', 'd2', 'left', 'n7', 'top', { label:'< 7 jours', labelColor:A, labelPos:0.33 }),
+      E('e9', 'd2', 'right', 'n9', 'top', { label:'> 7 jours', labelColor:R, labelPos:0.45 }),
+      E('e10', 'n7', 'bottom', 'n8', 'top'),
+      E('e11', 'n8', 'bottom', 'd1', 'left', { color:I, dashed:true, oy:960, ox:110 }),
+      E('e12', 'n9', 'bottom', 'd1', 'left', { color:I, dashed:true, oy:960, ox:110 }),
+      E('e13', 'p1', 'bottom', 'n10', 'top'),
+      E('e14', 'n10', 'right', 'n11', 'left', { color:R, dashed:true })
+    ]
+  };
+}
+
+/* ---------- Démarrage ---------- */
+let restored = false;
+try {
+  const s = JSON.parse(localStorage.getItem(KEY) || 'null');
+  if (s && s.doc && Array.isArray(s.doc.nodes)){ doc = s.doc; if (s.view) view = s.view; if (typeof s.snap === 'boolean') snap = s.snap; restored = true; }
+} catch (_) {}
+// Première ouverture : page vierge. Ensuite : dernier logigramme en cours.
+renderAll();
+if (!restored) requestAnimationFrame(fit);
+
+/* ---------- Application installable ---------- */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+let installEvt = null;
+const installBtn = $('#installBtn');
+window.addEventListener('beforeinstallprompt', ev => { ev.preventDefault(); installEvt = ev; installBtn.hidden = false; });
+installBtn.addEventListener('click', async () => {
+  if (!installEvt) return;
+  installEvt.prompt();
+  await installEvt.userChoice.catch(() => {});
+  installEvt = null; installBtn.hidden = true;
+});
+window.addEventListener('appinstalled', () => { installBtn.hidden = true; });
+})();
+</script>
+</body>
+</html>
