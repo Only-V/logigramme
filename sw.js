@@ -1,5 +1,5 @@
 // Service worker : l'app fonctionne hors ligne et se met à jour toute seule.
-const CACHE = 'logigramme-v2';
+const CACHE = 'logigramme-v3';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
